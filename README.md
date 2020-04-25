@@ -1,0 +1,2 @@
+# WmiQueryableCore
+Wmi Queryable Framework
