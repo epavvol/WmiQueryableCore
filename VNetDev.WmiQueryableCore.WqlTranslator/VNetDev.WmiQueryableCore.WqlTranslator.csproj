@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\VNetDev.WmiQueryableCore.WqlTranslator.Abstraction\VNetDev.WmiQueryableCore.WqlTranslator.Abstraction.csproj" />
+    <ProjectReference Include="..\VNetDev.WmiQueryableCore\VNetDev.WmiQueryableCore.csproj" />
+  </ItemGroup>
+
+</Project>
