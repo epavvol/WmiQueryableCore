@@ -1,8 +1,26 @@
 # WmiQueryable
 
 ***IQueryable Interface Implementation for Windows Management Instrumentation.***
+> ## Projects descriptions 
+>
+>> #### VNetDev.WmiQueryableCore
+>> *The project represents main WMI Queryable library that provides base WMI context object, attributes, exception classes and interfaces.*
+>
+>> #### VNetDev.WmiQueryableCore.WqlTranslator
+>> *The projects provide WMI translation functionality.*
+>
+>> #### VNetDev.WmiQueryableCore.WqlTranslator.Abstraction
+>> *This project contains a set of interfaces represent WqlTranslator object and its elements.*
+>
+>> #### VNetDev.WmiQueryableCore.Cim
+>> *The WMI Queryable driver provides communication over WinRM protocol.*
+>
+>> #### VNetDev.WmiQueryableCore.CIMv2
+>> *The project that extends Base WMI context class by implementing all the classes provided in Windows default WMI namespace "root\CIMV2".*
 
->## Code Examples
+***
+
+> ## Code Examples
 >
 >> ### Connecting to WMI (Locally with current credentials)
 >>```CSharp
