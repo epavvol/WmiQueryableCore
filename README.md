@@ -32,6 +32,11 @@
 >> *The project that extends Base WMI context class by implementing all the classes provided in Windows default WMI namespace "root\CIMV2".*
 >> 
 >> https://www.nuget.org/packages/VNetDev.WmiQueryableCore.CIMv2/
+>
+>> #### VNetDev.WmiQueryableCore.Sms
+>> *The project that extends Base WMI context class by implementing all the classes provided in Microsoft Endpoint Configuration Manager version 2002.*
+>> 
+>> https://www.nuget.org/packages/VNetDev.WmiQueryableCore.Sms/
 
 ***
 
@@ -64,9 +69,9 @@
 >>      => options.UseCim());
 >>```
 >
->>### Simple processes query
+>>### Simple processes query and termination
 >>```CSharp
->>	foreach (var process in context.Win32Process
+>>  foreach (var process in context.Win32Process
 >>      .Where(p => p.Name.StartsWith("calc")))
 >>  {
 >>      Console.WriteLine($"Found '{process.Name}' process[{process.ProcessId}]! Terminating...");

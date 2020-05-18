@@ -4,11 +4,12 @@
     <TargetFramework>netstandard2.0</TargetFramework>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <PackageVersion>1.3.0-beta</PackageVersion>
+    <PackageVersion>1.4.0-beta</PackageVersion>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <Version>1.3.0-beta</Version>
+    <Version>1.4.0-beta</Version>
     <Authors>Pavel Volkov</Authors>
     <Company />
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <RepositoryUrl>https://github.com/epavvol/WmiQueryableCore</RepositoryUrl>
   </PropertyGroup>
 </Project>
