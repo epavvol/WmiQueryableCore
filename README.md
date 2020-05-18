@@ -5,24 +5,45 @@
 >
 >> #### VNetDev.WmiQueryableCore
 >> *The project represents main WMI Queryable library that provides base WMI context object, attributes, exception classes and interfaces.*
+>> 
+>> https://www.nuget.org/packages/VNetDev.WmiQueryableCore/
 >
 >> #### VNetDev.WmiQueryableCore.WqlTranslator
 >> *The projects provide WMI translation functionality.*
+>> 
+>> https://www.nuget.org/packages/VNetDev.WmiQueryableCore.WqlTranslator/
 >
 >> #### VNetDev.WmiQueryableCore.WqlTranslator.Abstraction
 >> *This project contains a set of interfaces represent WqlTranslator object and its elements.*
+>> 
+>> https://www.nuget.org/packages/VNetDev.WmiQueryableCore.WqlTranslator.Abstraction/
 >
 >> #### VNetDev.WmiQueryableCore.Cim
 >> *The WMI Queryable driver provides communication over WinRM protocol.*
+>> 
+>> https://www.nuget.org/packages/VNetDev.WmiQueryableCore.Cim/
+>
+>> #### VNetDev.WmiQueryableCore.DCom
+>> *The WMI Queryable driver provides communication over DCom.*
+>> 
+>> https://www.nuget.org/packages/VNetDev.WmiQueryableCore.DCom/
 >
 >> #### VNetDev.WmiQueryableCore.CIMv2
 >> *The project that extends Base WMI context class by implementing all the classes provided in Windows default WMI namespace "root\CIMV2".*
+>> 
+>> https://www.nuget.org/packages/VNetDev.WmiQueryableCore.CIMv2/
 
 ***
 
 > ## Code Examples
 >
->> ### Connecting to WMI (Locally with current credentials)
+>> ### Connecting to WMI (Locally with current credentials via DCom)
+>>```CSharp
+>>  var context = new CIMv2WmiContext();
+>>  context.Configure(x => x.UseDCom());
+>>```
+>
+>> ### Connecting to WMI (Locally with current credentials via WinRM)
 >>```CSharp
 >>  var context = new CIMv2WmiContext();
 >>  context.Configure(x => x.UseCim());

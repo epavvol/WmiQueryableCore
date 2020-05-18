@@ -5,7 +5,6 @@ namespace VNetDev.WmiQueryableCore.WqlTranslator.Extensions
 {
     internal static class DateTimeExtension
     {
-        // Reference: 
         public static string ToDmtf(this DateTime date)
         {
             string str;

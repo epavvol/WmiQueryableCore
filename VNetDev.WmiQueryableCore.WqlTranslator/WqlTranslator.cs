@@ -53,21 +53,6 @@ namespace VNetDev.WmiQueryableCore.WqlTranslator
 
         #region Expression Visitor Overrides
 
-        public override Expression Visit(Expression node)
-        {
-            Console.ForegroundColor = ConsoleColor.DarkYellow;
-            Console.Write(node.NodeType);
-            Console.Write($" ({node.GetType().Name})");
-            if (node.NodeType == ExpressionType.Call)
-            {
-                Console.Write(" of method: " + ((MethodCallExpression) node).Method.Name);
-            }
-
-            Console.WriteLine();
-            Console.ResetColor();
-            return base.Visit(node);
-        }
-
         protected override Expression VisitMethodCall(MethodCallExpression node)
         {
             if (node.Method.DeclaringType == typeof(Queryable))
@@ -146,28 +131,6 @@ namespace VNetDev.WmiQueryableCore.WqlTranslator
                 }
 
                 return node;
-            }
-
-            if (typeof(IEnumerable).IsAssignableFrom(node.Method.DeclaringType))
-            {
-                switch (node.Method.Name)
-                {
-                    case "Contains":
-                        if (_objectStack.Peek() is IWqlPredicate containsPredicate)
-                        {
-                            _objectStack.Push(new WqlValue());
-                            Visit(node.Object);
-                            containsPredicate.SetLeft(_objectStack.Pop());
-
-                            _objectStack.Push(new WqlValue());
-                            Visit(node.Arguments[0]);
-                            containsPredicate.SetRight(_objectStack.Pop());
-
-                            containsPredicate.SetOperator("=");
-                        }
-
-                        return node;
-                }
             }
 
             if (node.Method.DeclaringType == typeof(string))
@@ -257,6 +220,28 @@ namespace VNetDev.WmiQueryableCore.WqlTranslator
                         });
                         Visit(node.Arguments[0]);
                         cntPredicate.SetRight(_objectStack.Pop());
+                        return node;
+                }
+            }
+
+            if (typeof(IEnumerable).IsAssignableFrom(node.Method.DeclaringType))
+            {
+                switch (node.Method.Name)
+                {
+                    case "Contains":
+                        if (_objectStack.Peek() is IWqlPredicate containsPredicate)
+                        {
+                            _objectStack.Push(new WqlValue());
+                            Visit(node.Object);
+                            containsPredicate.SetLeft(_objectStack.Pop());
+
+                            _objectStack.Push(new WqlValue());
+                            Visit(node.Arguments[0]);
+                            containsPredicate.SetRight(_objectStack.Pop());
+
+                            containsPredicate.SetOperator("=");
+                        }
+
                         return node;
                 }
             }
@@ -428,17 +413,18 @@ namespace VNetDev.WmiQueryableCore.WqlTranslator
             throw new NotSupportedException($"The member '{node.Member.Name}' is not supported");
         }
 
-        private static readonly Dictionary<ExpressionType, string> BinaryOperators = new Dictionary<ExpressionType, string>
-        {
-            {ExpressionType.OrElse, "OR"},
-            {ExpressionType.AndAlso, "AND"},
-            {ExpressionType.Equal, "="},
-            {ExpressionType.NotEqual, "!="},
-            {ExpressionType.GreaterThan, ">"},
-            {ExpressionType.GreaterThanOrEqual, ">="},
-            {ExpressionType.LessThan, "<"},
-            {ExpressionType.LessThanOrEqual, "<="}
-        };
+        private static readonly Dictionary<ExpressionType, string> BinaryOperators =
+            new Dictionary<ExpressionType, string>
+            {
+                {ExpressionType.OrElse, "OR"},
+                {ExpressionType.AndAlso, "AND"},
+                {ExpressionType.Equal, "="},
+                {ExpressionType.NotEqual, "!="},
+                {ExpressionType.GreaterThan, ">"},
+                {ExpressionType.GreaterThanOrEqual, ">="},
+                {ExpressionType.LessThan, "<"},
+                {ExpressionType.LessThanOrEqual, "<="}
+            };
 
         protected override Expression VisitBinary(BinaryExpression node)
         {

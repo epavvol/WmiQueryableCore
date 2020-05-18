@@ -5,6 +5,7 @@ VisualStudioVersion = 16.0.30104.148
 MinimumVisualStudioVersion = 15.0.26124.0
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Files", "Solution Files", "{4BAF065F-2258-410E-8C4D-B7ED3E39E4EB}"
 	ProjectSection(SolutionItems) = preProject
+		.gitattributes = .gitattributes
 		.gitignore = .gitignore
 		Directory.Build.props = Directory.Build.props
 		LICENSE = LICENSE
@@ -20,6 +21,8 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "VNetDev.WmiQueryableCore.Cim", "VNetDev.WmiQueryableCore.Cim\VNetDev.WmiQueryableCore.Cim.csproj", "{1838C40F-6524-49FE-A8C4-F1ADBD88774E}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "VNetDev.WmiQueryableCore.CIMv2", "VNetDev.WmiQueryableCore.CIMv2\VNetDev.WmiQueryableCore.CIMv2.csproj", "{4E413504-27A3-4A3C-B336-A950B36F5B4A}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "VNetDev.WmiQueryableCore.DCom", "VNetDev.WmiQueryableCore.DCom\VNetDev.WmiQueryableCore.DCom.csproj", "{820EAC69-3A06-4875-BD9A-18679DD7AF0D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -91,6 +94,18 @@ Global
 		{4E413504-27A3-4A3C-B336-A950B36F5B4A}.Release|x64.Build.0 = Release|Any CPU
 		{4E413504-27A3-4A3C-B336-A950B36F5B4A}.Release|x86.ActiveCfg = Release|Any CPU
 		{4E413504-27A3-4A3C-B336-A950B36F5B4A}.Release|x86.Build.0 = Release|Any CPU
+		{820EAC69-3A06-4875-BD9A-18679DD7AF0D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{820EAC69-3A06-4875-BD9A-18679DD7AF0D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{820EAC69-3A06-4875-BD9A-18679DD7AF0D}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{820EAC69-3A06-4875-BD9A-18679DD7AF0D}.Debug|x64.Build.0 = Debug|Any CPU
+		{820EAC69-3A06-4875-BD9A-18679DD7AF0D}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{820EAC69-3A06-4875-BD9A-18679DD7AF0D}.Debug|x86.Build.0 = Debug|Any CPU
+		{820EAC69-3A06-4875-BD9A-18679DD7AF0D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{820EAC69-3A06-4875-BD9A-18679DD7AF0D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{820EAC69-3A06-4875-BD9A-18679DD7AF0D}.Release|x64.ActiveCfg = Release|Any CPU
+		{820EAC69-3A06-4875-BD9A-18679DD7AF0D}.Release|x64.Build.0 = Release|Any CPU
+		{820EAC69-3A06-4875-BD9A-18679DD7AF0D}.Release|x86.ActiveCfg = Release|Any CPU
+		{820EAC69-3A06-4875-BD9A-18679DD7AF0D}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

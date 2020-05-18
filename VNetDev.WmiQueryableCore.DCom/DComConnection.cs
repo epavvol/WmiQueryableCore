@@ -1,44 +1,44 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Reflection;
-using System.Security;
 using System.Threading.Tasks;
-using Microsoft.Management.Infrastructure;
-using Microsoft.Management.Infrastructure.Options;
-using VNetDev.WmiQueryableCore.Attributes;
 using VNetDev.WmiQueryableCore.Contracts;
+using System.Management;
+using System.Reflection;
+using VNetDev.WmiQueryableCore.Attributes;
+using VNetDev.WmiQueryableCore.DCom.Extensions;
 using VNetDev.WmiQueryableCore.Exceptions;
 using VNetDev.WmiQueryableCore.WqlTranslator;
 using VNetDev.WmiQueryableCore.WqlTranslator.Abstraction;
 
-namespace VNetDev.WmiQueryableCore.Cim
+namespace VNetDev.WmiQueryableCore.DCom
 {
     /// <summary>
-    /// WMI Query Connection via Windows Remote Management
+    /// WMI Query Connection via DCom
     /// </summary>
-    public class CimConnection : IWmiConnection, IDisposable
+    public class DComConnection : IWmiConnection, IDisposable
     {
-        private const string QueryDialect = "WQL";
-        private readonly CimSession _connection;
-        private readonly string _nameSpace;
-        private WmiContext _context;
-        private readonly IWqlFactory _wqlFactory = new WqlFactory();
-        private readonly Dictionary<object, CimInstance> _instances = new Dictionary<object, CimInstance>();
+        private ManagementScope _connection;
         private bool _disposed;
+        private WmiContext _context;
+        private readonly Dictionary<object, ManagementObject> _instances = new Dictionary<object, ManagementObject>();
+        private readonly IWqlFactory _wqlFactory = new WqlFactory();
 
         #region Constructors
 
         /// <summary>
-        /// Constructor that takes preconfigured CimConnection and WMI namespace
+        /// Constructor that takes preconfigured <c>ManagementScope</c> and WMI namespace
         /// </summary>
-        /// <param name="connection">Preconfigured CimSession connection</param>
-        /// <param name="nameSpace">Namespace to configure</param>
-        public CimConnection(CimSession connection, string nameSpace = @"root\CIMv2")
+        /// <param name="connection">Preconfigured <c>ManagementScope</c> object</param>
+        public DComConnection(ManagementScope connection)
         {
             _connection = connection;
-            _nameSpace = nameSpace;
+            if (!_connection.IsConnected)
+            {
+                _connection.Connect();
+            }
         }
 
         /// <summary>
@@ -46,69 +46,62 @@ namespace VNetDev.WmiQueryableCore.Cim
         /// </summary>
         /// <param name="computerName">Computer name or IP address to connect</param>
         /// <param name="nameSpace">Namespace to configure</param>
-        public CimConnection(string computerName = "localhost", string nameSpace = @"root\CIMv2") :
-            this(CimSession.Create(computerName), nameSpace)
-        {
-        }
+        public DComConnection(string computerName = "localhost", string nameSpace = @"root\CIMv2")
+            => CreateDComConnection(computerName, nameSpace);
+
 
         /// <summary>
         /// Constructor that configures connection to host using specified credential object and takes WMI namespace
         /// </summary>
         /// <param name="computerName">Computer name or IP address to connect</param>
         /// <param name="nameSpace">Namespace to configure</param>
-        /// <param name="credential">Preconfigured credential object to be used in connection</param>
-        public CimConnection(string computerName, string nameSpace, CimCredential credential)
-        {
-            var sessionOptions = new WSManSessionOptions();
-            sessionOptions.AddDestinationCredentials(credential);
-            _connection = CimSession.Create(computerName, sessionOptions);
-            _nameSpace = nameSpace;
-        }
+        /// <param name="options">Preconfigured <c>ConnectionOptions</c> object</param>
+        public DComConnection(string computerName, string nameSpace, ConnectionOptions options)
+            => CreateDComConnection(computerName, nameSpace, options);
 
         /// <summary>
         /// Constructor that configures connection to host using specified credentials and takes WMI namespace
         /// </summary>
         /// <param name="computerName">Computer name or IP address to connect</param>
         /// <param name="nameSpace">Namespace to configure</param>
-        /// <param name="authenticationMechanism">Authentication mechanism to be used</param>
+        /// <param name="impersonationLevel">Impersonation Level</param>
         /// <param name="domain">User domain</param>
         /// <param name="userName">User name</param>
         /// <param name="password">User password</param>
-        public CimConnection(string computerName, string nameSpace,
-            PasswordAuthenticationMechanism authenticationMechanism, string domain, string userName, string password)
-        {
-            var securePassword = new SecureString();
-            foreach (var c in password)
+        public DComConnection(string computerName, string nameSpace, string domain, string userName, string password,
+            ImpersonationLevel impersonationLevel = ImpersonationLevel.Impersonate)
+            => CreateDComConnection(computerName, nameSpace, new ConnectionOptions
             {
-                securePassword.AppendChar(c);
-            }
-
-            var credential = new CimCredential(authenticationMechanism, domain, userName, securePassword);
-            var sessionOptions = new WSManSessionOptions();
-            sessionOptions.AddDestinationCredentials(credential);
-            _connection = CimSession.Create(computerName, sessionOptions);
-            _nameSpace = nameSpace;
-        }
+                EnablePrivileges = true,
+                Impersonation = impersonationLevel,
+                Username = $"{domain}\\{userName}",
+                Password = password
+            });
 
         #endregion
 
-        internal T InvokeCimMethod<T>(object wmiClass, string methodName,
-            IDictionary<string, object> methodParameters)
+        private void CreateDComConnection(string computerName, string nameSpace, ConnectionOptions options = null)
+            => (_connection = options == null
+                ? new ManagementScope($"\\\\{computerName}\\{nameSpace}")
+                : new ManagementScope($"\\\\{computerName}\\{nameSpace}", options)).Connect();
+
+        internal T InvokeDComMethod<T>(object wmiClass, string methodName,
+            IDictionary<string, object> parameters)
         {
-            var parameters = new CimMethodParametersCollection();
-            foreach (var methodParameter in methodParameters)
+            var arguments = new object[parameters.Count];
+            var i = 0;
+            foreach (var p in parameters)
             {
-                parameters.Add(CimMethodParameter.Create(methodParameter.Key, methodParameter.Value, CimFlags.In));
+                arguments[i++] = ManagementObjectTypeConverter.ToWmiType(p.Value);
             }
 
             var objectInstance = _instances.ContainsKey(wmiClass)
                 ? _instances[wmiClass]
                 : throw new NotSupportedException("Provided instance of WMI class is not registered!");
 
-            return (T) _connection.InvokeMethod(
-                objectInstance,
+            return (T) objectInstance.InvokeMethod(
                 methodName,
-                parameters).ReturnValue.Value;
+                arguments);
         }
 
         /// <summary>
@@ -119,24 +112,36 @@ namespace VNetDev.WmiQueryableCore.Cim
         /// <param name="methodName">Name of WMI method to be executed</param>
         /// <param name="methodParameters">WMI Method parameters</param>
         /// <returns>Method execution result of type <c>T</c></returns>
-        public T InvokeStaticMethod<T, TClass>(string methodName, IDictionary<string, object> methodParameters)
+        public T InvokeStaticMethod<T, TClass>(
+            string methodName, IDictionary<string, object> methodParameters)
         {
             var wmiClass = typeof(TClass);
-            var parameters = new CimMethodParametersCollection();
-            foreach (var methodParameter in methodParameters)
+            var className = wmiClass.GetCustomAttribute<WmiClassAttribute>()?
+                .Name ?? wmiClass.Name;
+            var managementClass = new ManagementClass(
+                _connection,
+                new ManagementPath(className),
+                new ObjectGetOptions());
+
+            var parameters = managementClass.GetMethodParameters(methodName);
+
+            foreach (var parameter in methodParameters)
             {
-                var val = methodParameter.Value;
-                if(val == null)
+                if (parameter.Value == null)
                     continue;
-                parameters.Add(CimMethodParameter.Create(methodParameter.Key, val, CimFlags.In));
+                parameters[parameter.Key] = ManagementObjectTypeConverter.ToWmiType(parameter.Value);
             }
 
-            return (T) _connection.InvokeMethod(
-                _nameSpace,
-                wmiClass.GetCustomAttribute<WmiClassAttribute>()?
-                    .Name ?? wmiClass.Name,
+            var resultValue = managementClass.InvokeMethod(
                 methodName,
-                parameters).ReturnValue.Value;
+                parameters,
+                null)?["ReturnValue"];
+            if (resultValue == null)
+            {
+                return default;
+            }
+
+            return (T) resultValue;
         }
 
         /// <summary>
@@ -147,15 +152,17 @@ namespace VNetDev.WmiQueryableCore.Cim
         public T CreateInstance<T>()
         {
             var objectType = typeof(T);
+            var className = objectType.GetCustomAttribute<WmiClassAttribute>()?
+                .Name ?? objectType.Name;
+            var managementClass = new ManagementClass(
+                _connection,
+                new ManagementPath(className),
+                new ObjectGetOptions());
+
             return new ObjectReader<T>(
                     new[]
                     {
-                        _connection
-                            .CreateInstance(_nameSpace, new CimInstance(
-                                objectType
-                                    .GetCustomAttribute<WmiClassAttribute>()?
-                                    .Name ?? objectType.Name,
-                                _nameSpace))
+                        managementClass
                     },
                     this,
                     null,
@@ -168,53 +175,35 @@ namespace VNetDev.WmiQueryableCore.Cim
         /// </summary>
         public void Close()
         {
-            _connection?.Close();
+            _connection = null;
+            _disposed = true;
         }
 
         /// <summary>
         /// Test the connection
         /// </summary>
         /// <returns>true if connection alive, otherwise false</returns>
-        public bool TestConnection() => _connection.TestConnection();
+        public bool TestConnection() => _connection?.IsConnected ?? false;
 
         /// <summary>
         /// Test the connection asynchronously
         /// </summary>
         /// <returns>true if connection alive, otherwise false</returns>
         public Task<bool> TestConnectionAsync() => Task.Factory
-            .StartNew(() => _connection.TestConnection());
+            .StartNew(() => _connection.IsConnected);
 
         /// <summary>
-        /// Deletes tracked WMI object instance
+        /// Closing connection and disposing object
         /// </summary>
-        /// <param name="wmiClass">instance to be deleted</param>
-        public void Delete(object wmiClass)
+        public void Dispose()
         {
-            if (!_instances.ContainsKey(wmiClass))
+            if (_disposed)
             {
-                throw new WmiObjectNotRegisteredException();
+                throw new ObjectDisposedException(nameof(ManagementScope));
             }
 
-            _connection.DeleteInstance(
-                _instances[wmiClass]);
-            _instances.Remove(wmiClass);
+            Close();
         }
-
-        /// <summary>
-        /// Deletes tracked WMI object instance asynchronously
-        /// </summary>
-        /// <param name="wmiClass">instance to be deleted</param>
-        public Task DeleteAsync(object wmiClass) => Task.Run(() =>
-        {
-            if (!_instances.ContainsKey(wmiClass))
-            {
-                throw new WmiObjectNotRegisteredException();
-            }
-
-            _connection.DeleteInstance(
-                _instances[wmiClass]);
-            _instances.Remove(wmiClass);
-        });
 
         /// <summary>
         /// Sets WMI context instance for WMI Query provider
@@ -237,22 +226,6 @@ namespace VNetDev.WmiQueryableCore.Cim
         public bool HasContext() => _context != null;
 
         /// <summary>
-        /// Closing connection and disposing object
-        /// </summary>
-        public void Dispose()
-        {
-            if (_disposed)
-            {
-                throw new ObjectDisposedException(nameof(CimConnection));
-            }
-
-            _connection?.Dispose();
-            _disposed = true;
-        }
-
-        #region IQueryProvider interface implementation
-
-        /// <summary>
         /// Creates Query object from LINQ expression provided
         /// </summary>
         /// <param name="expression">LINQ Expression</param>
@@ -268,8 +241,87 @@ namespace VNetDev.WmiQueryableCore.Cim
         public IQueryable<TElement> CreateQuery<TElement>(Expression expression) =>
             new WmiClassSet<TElement>(_context, expression);
 
+        /// <summary>
+        /// Executes query and returns WMI object instances
+        /// </summary>
+        /// <param name="expression">LINQ expression</param>
+        /// <returns>Query result as object</returns>
+        public object Execute(Expression expression)
+        {
+            var translationResult = _wqlFactory.TranslateQuery(expression);
+            var allInstances = new ManagementObjectSearcher(
+                    _connection,
+                    new ObjectQuery(translationResult.ToString()))
+                .Get()
+                .Cast<ManagementObject>();
+
+            if (expression is MethodCallExpression methodCallExpression)
+            {
+                var returnInstanceType = methodCallExpression.Type;
+                ManagementObject instance;
+                ManagementObject[] instances;
+                switch (methodCallExpression.Method.Name)
+                {
+                    case "Count":
+                        return allInstances.Count();
+                    case "First":
+                        instance = allInstances.FirstOrDefault();
+                        if (instance == null)
+                        {
+                            throw new InvalidOperationException("No object found!");
+                        }
+
+                        return CreateObjectInstances(
+                            returnInstanceType,
+                            translationResult,
+                            new[] {instance}).FirstOrDefault();
+                    case "FirstOrDefault":
+                        instance = allInstances.FirstOrDefault();
+                        if (instance == null)
+                        {
+                            return null;
+                        }
+
+                        return CreateObjectInstances(
+                            returnInstanceType,
+                            translationResult,
+                            new[] {instance}).FirstOrDefault();
+                    case "Single":
+                        instances = allInstances.ToArray();
+                        if (instances.Length != 1)
+                        {
+                            throw new InvalidOperationException("No single object found!");
+                        }
+
+                        return CreateObjectInstances(
+                            returnInstanceType,
+                            translationResult,
+                            new[] {instances}).FirstOrDefault();
+                    case "SingleOrDefault":
+                        instances = allInstances.ToArray();
+                        if (instances.Length != 1)
+                        {
+                            return null;
+                        }
+
+                        return CreateObjectInstances(
+                            returnInstanceType,
+                            translationResult,
+                            new[] {instances.First()}).FirstOrDefault();
+                    default:
+                        return CreateObjectInstances(
+                            returnInstanceType.GetGenericArguments()[0],
+                            translationResult,
+                            allInstances);
+                }
+            }
+
+            return CreateObjectInstances(expression.Type.GenericTypeArguments[0], translationResult,
+                allInstances);
+        }
+
         private IEnumerable<object> CreateObjectInstances(Type type, IWqlQuery queryObject,
-            IEnumerable<CimInstance> instances)
+            IEnumerable instances)
         {
             return (IEnumerable<object>) Activator.CreateInstance(
                 typeof(ObjectReader<>).MakeGenericType(type),
@@ -279,82 +331,6 @@ namespace VNetDev.WmiQueryableCore.Cim
                 null);
         }
 
-        /// <summary>
-        /// Executes query and returns WMI object instances
-        /// </summary>
-        /// <param name="expression">LINQ expression</param>
-        /// <returns>Query result as object</returns>
-        public object Execute(Expression expression)
-        {
-            var translationResult = _wqlFactory.TranslateQuery(expression);
-            var allInstances = _connection
-                .QueryInstances(
-                    _nameSpace,
-                    QueryDialect,
-                    translationResult.ToString());
-
-            if (expression is MethodCallExpression methodCallExpression)
-            {
-                var returnInstanceType = methodCallExpression.Type;
-                CimInstance instance;
-                IList<CimInstance> instances;
-                switch (methodCallExpression.Method.Name)
-                {
-                    case "Count":
-                        return allInstances.Count();
-                    case "First":
-                        instance = allInstances.FirstOrDefault();
-                        if (instance == null)
-                            throw new InvalidOperationException("No object found!");
-
-                        return CreateObjectInstances(
-                            returnInstanceType,
-                            translationResult,
-                            new[] {instance}).First();
-                    case "FirstOrDefault":
-                        instance = allInstances.FirstOrDefault();
-                        if (instance == null)
-                            return null;
-
-                        return CreateObjectInstances(
-                            returnInstanceType,
-                            translationResult,
-                            new[] {instance}).First();
-                    case "Single":
-                        instances = allInstances.ToList();
-                        if (instances.Count != 1)
-                        {
-                            throw new InvalidOperationException("No single object found!");
-                        }
-
-                        return CreateObjectInstances(
-                            returnInstanceType,
-                            translationResult,
-                            new[] {instances.First()}).First();
-                    case "SingleOrDefault":
-                        instances = allInstances.ToList();
-                        if (instances.Count != 1)
-                        {
-                            return null;
-                        }
-
-                        return CreateObjectInstances(
-                            returnInstanceType,
-                            translationResult,
-                            new[] {instances[0]}).First();
-                    default:
-                        return CreateObjectInstances(
-                            returnInstanceType.GetGenericArguments()[0],
-                            translationResult,
-                            allInstances);
-                }
-            }
-
-            return CreateObjectInstances(
-                expression.Type.GenericTypeArguments[0],
-                translationResult,
-                allInstances);
-        }
 
         /// <summary>
         /// Executes query and returns WMI object instances
@@ -365,11 +341,39 @@ namespace VNetDev.WmiQueryableCore.Cim
         public TResult Execute<TResult>(Expression expression) =>
             (TResult) Execute(expression);
 
-        #endregion
-
-        internal void RegisterInstance(object wmiClass, CimInstance cimInstance)
+        /// <summary>
+        /// Deletes tracked WMI object instance
+        /// </summary>
+        /// <param name="wmiClass">instance to be deleted</param>
+        public void Delete(object wmiClass)
         {
-            _instances[wmiClass] = cimInstance;
+            if (!_instances.ContainsKey(wmiClass))
+            {
+                throw new WmiObjectNotRegisteredException();
+            }
+
+            _instances[wmiClass].Delete();
+            _instances.Remove(wmiClass);
+        }
+
+        /// <summary>
+        /// Deletes tracked WMI object instance asynchronously
+        /// </summary>
+        /// <param name="wmiClass">instance to be deleted</param>
+        public Task DeleteAsync(object wmiClass) => Task.Run(() =>
+        {
+            if (!_instances.ContainsKey(wmiClass))
+            {
+                throw new WmiObjectNotRegisteredException();
+            }
+
+            _instances[wmiClass].Delete();
+            _instances.Remove(wmiClass);
+        });
+
+        internal void RegisterInstance(object wmiClass, ManagementObject objectInstance)
+        {
+            _instances[wmiClass] = objectInstance;
         }
     }
 }
