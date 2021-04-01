@@ -1,6 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Management;
-using System.Resources;
 
 namespace VNetDev.WmiQueryableCore.DCom.Extensions
 {
@@ -24,6 +25,23 @@ namespace VNetDev.WmiQueryableCore.DCom.Extensions
             if (type == typeof(DateTime))
             {
                 return ManagementDateTimeConverter.ToDateTime(value.ToString());
+            }
+
+            if (type.IsGenericType && value is ICollection<object> enumerableValue)
+            {
+                var genericType = type.GenericTypeArguments.First();
+                var genericCollectionType = typeof(List<>).MakeGenericType(genericType);
+                var result = Activator.CreateInstance(genericCollectionType);
+                var addMethod = genericCollectionType.GetMethods()
+                    .First(x => x.Name == "Add");
+                foreach (var entry in enumerableValue
+                    .Select(listEntry =>
+                        FromWmiType(genericType, listEntry)))
+                {
+                    addMethod.Invoke(result, new[] {entry});
+                }
+
+                return result;
             }
 
             return Convert.ChangeType(value, type);
