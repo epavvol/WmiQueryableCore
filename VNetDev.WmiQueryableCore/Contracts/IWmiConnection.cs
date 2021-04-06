@@ -30,14 +30,14 @@ namespace VNetDev.WmiQueryableCore.Contracts
         /// <summary>
         /// Delete tracked WMI object instance
         /// </summary>
-        /// <param name="wmiCLass">WMI object instance</param>
-        void Delete(object wmiCLass);
+        /// <param name="wmiClass">WMI object instance</param>
+        void Delete(object wmiClass);
 
         /// <summary>
         /// Delete tracked WMI object instance asynchronously
         /// </summary>
-        /// <param name="wmiCLass">WMI object instance</param>
-        Task DeleteAsync(object wmiCLass);
+        /// <param name="wmiClass">WMI object instance</param>
+        Task DeleteAsync(object wmiClass);
 
         /// <summary>
         /// Sets WMI context instance for WMI Query provider

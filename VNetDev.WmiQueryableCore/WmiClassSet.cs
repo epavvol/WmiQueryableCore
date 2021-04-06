@@ -118,5 +118,17 @@ namespace VNetDev.WmiQueryableCore
         /// </summary>
         /// <returns>Created instance</returns>
         public T Create() => _context.CreateObjectInstance<T>();
+
+        /// <summary>
+        /// Saves WMI Object instance
+        /// </summary>
+        /// <param name="instance">Instance to save</param>
+        public void Save(T instance) => _context.SaveObjectInstance<T>(instance);
+
+        /// <summary>
+        /// Deletes WMI Object instance
+        /// </summary>
+        /// <param name="instance">Instance to delete</param>
+        public void Delete(T instance) => _context.DeleteObjectInstance<T>(instance);
     }
 }

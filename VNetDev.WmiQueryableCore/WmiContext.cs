@@ -118,6 +118,11 @@ namespace VNetDev.WmiQueryableCore
 
         internal T CreateObjectInstance<T>() => Connection.CreateInstance<T>();
 
+        internal void SaveObjectInstance<T>(T instance) =>
+            throw new NotImplementedException(nameof(SaveObjectInstance) + " is not implemented!");
+
+        internal void DeleteObjectInstance<T>(T instance) => Connection.Delete(instance);
+
         private static T InvokeStaticMethod<T, TClass>(WmiContext wmiContext, string methodName,
             IDictionary<string, object> methodParameters) =>
             wmiContext.Connection == null
