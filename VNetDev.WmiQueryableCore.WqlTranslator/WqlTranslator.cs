@@ -231,15 +231,31 @@ namespace VNetDev.WmiQueryableCore.WqlTranslator
                     case "Contains":
                         if (_objectStack.Peek() is IWqlPredicate containsPredicate)
                         {
-                            _objectStack.Push(new WqlValue());
-                            Visit(node.Object);
-                            containsPredicate.SetLeft(_objectStack.Pop());
+                            if (node.Object is ConstantExpression constantExpression &&
+                                typeof(IEnumerable).IsAssignableFrom(constantExpression.Type))
+                            {
+                                _objectStack.Push(new WqlValue());
+                                Visit(node.Arguments[0]);
+                                containsPredicate.SetLeft(_objectStack.Pop());
 
-                            _objectStack.Push(new WqlValue());
-                            Visit(node.Arguments[0]);
-                            containsPredicate.SetRight(_objectStack.Pop());
+                                _objectStack.Push(new WqlValue());
+                                Visit(node.Object);
+                                containsPredicate.SetRight(_objectStack.Pop());
 
-                            containsPredicate.SetOperator("=");
+                                containsPredicate.SetOperator("IN");
+                            }
+                            else
+                            {
+                                _objectStack.Push(new WqlValue());
+                                Visit(node.Object);
+                                containsPredicate.SetLeft(_objectStack.Pop());
+
+                                _objectStack.Push(new WqlValue());
+                                Visit(node.Arguments[0]);
+                                containsPredicate.SetRight(_objectStack.Pop());
+
+                                containsPredicate.SetOperator("=");
+                            }
                         }
 
                         return node;
@@ -297,6 +313,12 @@ namespace VNetDev.WmiQueryableCore.WqlTranslator
                     case TypeCode.DBNull:
                     case TypeCode.Empty:
                     case TypeCode.Object:
+                        if (node.Value is IEnumerable<string> stringEnumerable)
+                        {
+                            result = $"({string.Join(", ", stringEnumerable.Select(x => $"'{x}'"))})";
+                            break;
+                        }
+
                         throw new NotSupportedException(
                             $"Constant of type '{node.Value.GetType().Name}' is not supported!");
                     default:
