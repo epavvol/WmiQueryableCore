@@ -11,7 +11,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\VNetDev.WmiQueryableCore.WqlTranslator\VNetDev.WmiQueryableCore.WqlTranslator.csproj" />
-    <ProjectReference Include="..\VNetDev.WmiQueryableCore\VNetDev.WmiQueryableCore.csproj" />
   </ItemGroup>
 
 </Project>

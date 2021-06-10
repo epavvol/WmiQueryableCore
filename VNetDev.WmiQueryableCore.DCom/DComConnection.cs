@@ -132,10 +132,16 @@ namespace VNetDev.WmiQueryableCore.DCom
                 parameters[parameter.Key] = ManagementObjectTypeConverter.ToWmiType(parameter.Value);
             }
 
+            var returnPropertyName = _context
+                                         .GetType()
+                                         .GetCustomAttribute<WmiContextAttribute>()?
+                                         .MethodDefaultReturnProperty
+                                     ?? "ReturnValue";
+
             var resultValue = managementClass.InvokeMethod(
                 methodName,
                 parameters,
-                null)?["ReturnValue"];
+                null)?[returnPropertyName];
             if (resultValue == null)
             {
                 return default;

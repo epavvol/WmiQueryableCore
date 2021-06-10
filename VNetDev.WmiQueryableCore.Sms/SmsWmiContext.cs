@@ -1,10 +1,12 @@
-﻿using VNetDev.WmiQueryableCore.Sms.Classes;
+﻿using VNetDev.WmiQueryableCore.Attributes;
+using VNetDev.WmiQueryableCore.Sms.Classes;
 
 namespace VNetDev.WmiQueryableCore.Sms
 {
     /// <summary>
     /// Representation of WMI namespace of Microsoft Endpoint Configuration Manager version 2002
     /// </summary>
+    [WmiContext(MethodDefaultReturnProperty = "StatusCode")]
     public class SmsWmiContext : WmiContext
     {
         #region Constructors
