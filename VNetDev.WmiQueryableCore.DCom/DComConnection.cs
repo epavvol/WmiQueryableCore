@@ -98,10 +98,18 @@ namespace VNetDev.WmiQueryableCore.DCom
             var objectInstance = _instances.ContainsKey(wmiClass)
                 ? _instances[wmiClass]
                 : throw new NotSupportedException("Provided instance of WMI class is not registered!");
-
-            return (T) objectInstance.InvokeMethod(
-                methodName,
-                arguments);
+            
+            // TODO: Casting
+            try
+            {
+                return (T) objectInstance.InvokeMethod(
+                    methodName,
+                    arguments);
+            }
+            catch (Exception)
+            {
+                return default;
+            }
         }
 
         /// <summary>
@@ -138,16 +146,39 @@ namespace VNetDev.WmiQueryableCore.DCom
                                          .MethodDefaultReturnProperty
                                      ?? "ReturnValue";
 
-            var resultValue = managementClass.InvokeMethod(
+            object resultValue;
+            var dComResult = managementClass.InvokeMethod(
                 methodName,
                 parameters,
-                null)?[returnPropertyName];
+                null);
+            if (dComResult is null)
+            {
+                return default;
+            }
+
+            try
+            {
+                resultValue = dComResult[returnPropertyName];
+            }
+            catch (Exception)
+            {
+                resultValue = dComResult["ReturnValue"];
+            }
+
             if (resultValue == null)
             {
                 return default;
             }
 
-            return (T) resultValue;
+            // TODO: Finish type check or prevent type mismatch
+            try
+            {
+                return (T) resultValue;
+            }
+            catch (Exception)
+            {
+                return default;
+            }
         }
 
         /// <summary>
