@@ -4,9 +4,9 @@
     <TargetFramework>netstandard2.0</TargetFramework>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <PackageVersion>1.4.1-beta</PackageVersion>
+    <PackageVersion>1.5.0</PackageVersion>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <Version>1.4.1-beta</Version>
+    <Version>1.5.0</Version>
     <Authors>Pavel Volkov</Authors>
     <Company />
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
