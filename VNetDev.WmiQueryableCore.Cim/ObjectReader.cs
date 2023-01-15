@@ -6,6 +6,7 @@ using System.Linq.Expressions;
 using System.Reflection;
 using Microsoft.Management.Infrastructure;
 using VNetDev.WmiQueryableCore.Attributes;
+using VNetDev.WmiQueryableCore.Cim.Extensions;
 using VNetDev.WmiQueryableCore.WqlTranslator.Abstraction;
 
 namespace VNetDev.WmiQueryableCore.Cim
@@ -78,23 +79,7 @@ namespace VNetDev.WmiQueryableCore.Cim
                 _connection.RegisterInstance(currentObject, _collection.Current);
 
                 var currentObjectType = currentObject.GetType();
-                foreach (var property in currentObjectType.GetProperties())
-                {
-                    if (currentObjectType.GetProperty(property.Name)?
-                        .GetCustomAttribute<WmiIgnorePropertyAttribute>(false) != null)
-                    {
-                        continue;
-                    }
-
-                    var objectPropertyAttribute = currentObjectType
-                        .GetProperty(property.Name)?
-                        .GetCustomAttribute<WmiPropertyAttribute>(false);
-                    var propertyName = objectPropertyAttribute?.Name ?? property.Name;
-                    property.SetValue(
-                        currentObject,
-                        _collection.Current?
-                            .CimInstanceProperties[propertyName]?.Value);
-                }
+                _collection.Current.AssignObjectValues(currentObject);
 
                 var members = currentObjectType
                     .GetFields(BindingFlags.Instance | BindingFlags.Public)
@@ -164,6 +149,8 @@ namespace VNetDev.WmiQueryableCore.Cim
                 }
 
                 Current = (T) (_queryObject == null ? currentObject : _queryObject.ProceedDelegates(currentObject));
+
+                _connection.ObjectTracker.TrackObject(Current);
 
                 return true;
             }

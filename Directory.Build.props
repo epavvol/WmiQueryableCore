@@ -4,14 +4,15 @@
     <TargetFramework>netstandard2.0</TargetFramework>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <PackageVersion>1.5.0</PackageVersion>
+    <PackageVersion>1.6.0</PackageVersion>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <Version>1.5.0</Version>
+    <Version>1.6.0</Version>
     <Authors>Pavel Volkov</Authors>
     <Company />
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <RepositoryUrl>https://github.com/epavvol/WmiQueryableCore</RepositoryUrl>
     <PackageIcon>vNetDevLogo.png</PackageIcon>
+    <ErrorOnDuplicatePublishOutputFiles>false</ErrorOnDuplicatePublishOutputFiles>
   </PropertyGroup>
 
 	<ItemGroup>

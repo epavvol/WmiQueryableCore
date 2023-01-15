@@ -78,22 +78,7 @@ namespace VNetDev.WmiQueryableCore.DCom
                 _connection.RegisterInstance(currentObject, _collection.Current);
 
                 var currentObjectType = currentObject.GetType();
-                foreach (var property in currentObjectType.GetProperties())
-                {
-                    if (currentObjectType.GetProperty(property.Name)?
-                        .GetCustomAttribute<WmiIgnorePropertyAttribute>(false) != null)
-                    {
-                        continue;
-                    }
-
-                    var objectPropertyAttribute = currentObjectType
-                        .GetProperty(property.Name)?
-                        .GetCustomAttribute<WmiPropertyAttribute>(false);
-                    var propertyName = objectPropertyAttribute?.Name ?? property.Name;
-                    property.SetValue(
-                        currentObject,
-                        _collection.Current.GetWmiValue(property.PropertyType, propertyName));
-                }
+                _collection.Current.AssignObjectValues(currentObject);
 
                 var members = currentObjectType
                     .GetFields(BindingFlags.Instance | BindingFlags.Public)
@@ -163,6 +148,8 @@ namespace VNetDev.WmiQueryableCore.DCom
                 }
 
                 Current = (T)(_queryObject == null ? currentObject : _queryObject.ProceedDelegates(currentObject));
+
+                _connection.ObjectTracker.TrackObject(Current);
 
                 return true;
             }

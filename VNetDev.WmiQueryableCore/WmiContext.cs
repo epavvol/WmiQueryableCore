@@ -37,6 +37,11 @@ namespace VNetDev.WmiQueryableCore
         /// </summary>
         public bool IsConfigured => _options?.Connection != null;
 
+        /// <summary>
+        /// WMI Object tracker
+        /// </summary>
+        public ObjectTracker ObjectTracker { get; } = new ObjectTracker();
+
         #endregion
 
         #region Constructors
@@ -118,8 +123,7 @@ namespace VNetDev.WmiQueryableCore
 
         internal T CreateObjectInstance<T>() => Connection.CreateInstance<T>();
 
-        internal void SaveObjectInstance<T>(T instance) =>
-            throw new NotImplementedException(nameof(SaveObjectInstance) + " is not implemented!");
+        internal void SaveObjectInstance<T>(T instance) => _connection.SaveInstance(instance);
 
         internal void DeleteObjectInstance<T>(T instance) => Connection.Delete(instance);
 

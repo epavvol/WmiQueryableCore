@@ -6,7 +6,7 @@ namespace VNetDev.WmiQueryableCore.Cim.Extensions
     /// <summary>
     /// WmiContextOptionsBuilder extension methods
     /// </summary>
-    public static class WmiContextOptionsBuilderExtension
+    public static class WmiContextOptionsBuilderExtensions
     {
         /// <summary>
         /// Add Connection driver to use Windows Remote management

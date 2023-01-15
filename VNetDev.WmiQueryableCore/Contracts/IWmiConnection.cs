@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -57,6 +56,12 @@ namespace VNetDev.WmiQueryableCore.Contracts
         /// <typeparam name="T">WMI Class Type</typeparam>
         /// <returns>Created WMI object instance</returns>
         T CreateInstance<T>();
+
+        /// <summary>
+        /// Saves instance of WMI object
+        /// </summary>
+        /// <param name="instance">Object to be saved</param>
+        void SaveInstance(object instance);
 
         /// <summary>
         /// Executes static method of WMI class

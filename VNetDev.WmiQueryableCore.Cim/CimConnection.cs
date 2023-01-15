@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Microsoft.Management.Infrastructure;
 using Microsoft.Management.Infrastructure.Options;
 using VNetDev.WmiQueryableCore.Attributes;
+using VNetDev.WmiQueryableCore.Cim.Extensions;
 using VNetDev.WmiQueryableCore.Contracts;
 using VNetDev.WmiQueryableCore.Exceptions;
 using VNetDev.WmiQueryableCore.WqlTranslator;
@@ -27,6 +28,11 @@ namespace VNetDev.WmiQueryableCore.Cim
         private readonly IWqlFactory _wqlFactory = new WqlFactory();
         private readonly Dictionary<object, CimInstance> _instances = new Dictionary<object, CimInstance>();
         private bool _disposed;
+
+        /// <summary>
+        /// Object tracker
+        /// </summary>
+        public ObjectTracker ObjectTracker => _context.ObjectTracker;
 
         #region Constructors
 
@@ -164,6 +170,24 @@ namespace VNetDev.WmiQueryableCore.Cim
         }
 
         /// <summary>
+        /// Saves instance of WMI object
+        /// </summary>
+        /// <param name="instance">Object to be saved</param>
+        public void SaveInstance(object instance)
+        {
+            if (!_instances.ContainsKey(instance))
+            {
+                throw new WmiObjectNotRegisteredException();
+            }
+
+            var currentInstance = _instances[instance];
+            currentInstance.SetWmiValues(ObjectTracker, instance);
+            _connection.ModifyInstance(currentInstance);
+            currentInstance.AssignObjectValues(instance);
+            ObjectTracker.ResetTrackedObject(instance);
+        }
+
+        /// <summary>
         /// Close the connection
         /// </summary>
         public void Close()
@@ -227,7 +251,7 @@ namespace VNetDev.WmiQueryableCore.Cim
                 throw new WmiContextReassignmentException(nameof(WmiContext));
             }
 
-            _context = context ?? throw new ArgumentNullException(nameof(WmiContext));
+            _context = context ?? throw new ArgumentNullException(nameof(context));
         }
 
         /// <summary>

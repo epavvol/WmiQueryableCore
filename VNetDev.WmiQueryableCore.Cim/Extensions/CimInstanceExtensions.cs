@@ -1,14 +1,13 @@
-﻿using System;
+﻿using Microsoft.Management.Infrastructure;
 using System.Linq;
-using System.Management;
 using System.Reflection;
 using VNetDev.WmiQueryableCore.Attributes;
 
-namespace VNetDev.WmiQueryableCore.DCom.Extensions
+namespace VNetDev.WmiQueryableCore.Cim.Extensions
 {
-    internal static class ManagementObjectExtension
+    internal static class CimInstanceExtensions
     {
-        internal static void AssignObjectValues(this ManagementObject managementObject, object objectInstance)
+        internal static void AssignObjectValues(this CimInstance cimInstance, object objectInstance)
         {
             var currentObjectType = objectInstance.GetType();
             foreach (var property in currentObjectType.GetProperties())
@@ -22,50 +21,29 @@ namespace VNetDev.WmiQueryableCore.DCom.Extensions
                 var objectPropertyAttribute = currentObjectType
                     .GetProperty(property.Name)?
                     .GetCustomAttribute<WmiPropertyAttribute>(false);
-
                 var propertyName = objectPropertyAttribute?.Name ?? property.Name;
                 property.SetValue(
                     objectInstance,
-                    managementObject.GetWmiValue(property.PropertyType, propertyName));
+                    cimInstance?.CimInstanceProperties[propertyName]?.Value);
             }
         }
 
-        internal static T GetWmiValue<T>(this ManagementBaseObject wmiObject, string key) =>
-            (T)GetWmiValue(wmiObject, typeof(T), key);
-
-        internal static object GetWmiValue(this ManagementBaseObject wmiObject, Type type, string key) =>
-            ManagementObjectTypeConverter.FromWmiType(type, wmiObject[key]);
-
-        internal static void SetWmiValue(this ManagementObject wmiObject, string key, Type valueType, object value)
-        {
-            if (!valueType.IsValueType && valueType != typeof(string))
-            {
-                return;
-            }
-
-            wmiObject[key] = ManagementObjectTypeConverter.ToWmiType(value);
-        }
-
-        internal static string[] GetWmiObjectPropertyNames(this ManagementObject managementObject)
+        internal static string[] GetWmiObjectPropertyNames(this CimInstance cimInstance)
         {
             var result = Enumerable.Empty<string>();
-            foreach (var objectProperty in managementObject.Properties)
+            foreach (var objectProperty in cimInstance.CimInstanceProperties)
             {
                 result = result.Append(objectProperty.Name.ToLower());
             }
 
             return result.ToArray();
         }
-
-        internal static void SetWmiValues(this ManagementBaseObject wmiObject, ObjectTracker objectTracker, object objectInstance)
+        
+        public static void SetWmiValues(this CimInstance cimInstance, ObjectTracker objectTracker,
+            object objectInstance)
         {
-            if (!(wmiObject is ManagementObject managementObject))
-            {
-                return;
-            }
-
             var currentObjectType = objectInstance.GetType();
-            var availablePropertyNames = managementObject.GetWmiObjectPropertyNames();
+            var availablePropertyNames = cimInstance.GetWmiObjectPropertyNames();
             foreach (var property in currentObjectType.GetProperties())
             {
                 if (!objectTracker.CheckPropertyChanged(objectInstance, property.Name))
@@ -91,22 +69,13 @@ namespace VNetDev.WmiQueryableCore.DCom.Extensions
 
                 try
                 {
-                    managementObject
-                        .SetWmiValue(
-                            propertyName,
-                            property.PropertyType,
-                            property.GetValue(objectInstance));
+                    cimInstance.CimInstanceProperties[propertyName].Value = property.GetValue(objectInstance);
                 }
                 catch
                 {
                     // ignored
                 }
             }
-
-            managementObject.Put();
-            managementObject.Get();
-            managementObject.AssignObjectValues(objectInstance);
-            objectTracker.ResetTrackedObject(objectInstance);
         }
     }
 }

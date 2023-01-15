@@ -21,7 +21,10 @@ namespace VNetDev.WmiQueryableCore.DCom.Extensions
         internal static object FromWmiType(Type type, object value)
         {
             if (value == null)
+            {
                 return null;
+            }
+
             if (type == typeof(DateTime))
             {
                 return ManagementDateTimeConverter.ToDateTime(value.ToString());

@@ -26,6 +26,11 @@ namespace VNetDev.WmiQueryableCore.DCom
         private readonly Dictionary<object, ManagementObject> _instances = new Dictionary<object, ManagementObject>();
         private readonly IWqlFactory _wqlFactory = new WqlFactory();
 
+        /// <summary>
+        /// Object tracker
+        /// </summary>
+        public ObjectTracker ObjectTracker => _context.ObjectTracker;
+
         #region Constructors
 
         /// <summary>
@@ -194,7 +199,8 @@ namespace VNetDev.WmiQueryableCore.DCom
             var managementClass = new ManagementClass(
                 _connection,
                 new ManagementPath(className),
-                new ObjectGetOptions());
+                new ObjectGetOptions())
+                .CreateInstance();
 
             return new ObjectReader<T>(
                     new[]
@@ -205,6 +211,21 @@ namespace VNetDev.WmiQueryableCore.DCom
                     null,
                     typeof(T))
                 .First();
+        }
+
+        /// <summary>
+        /// Saves instance of WMI object
+        /// </summary>
+        /// <param name="instance">Object to be saved</param>
+        public void SaveInstance(object instance)
+        {
+            if (!_instances.ContainsKey(instance))
+            {
+                throw new WmiObjectNotRegisteredException();
+            }
+
+            var wmiObject = _instances[instance];
+            wmiObject.SetWmiValues(ObjectTracker, instance);
         }
 
         /// <summary>
@@ -367,7 +388,6 @@ namespace VNetDev.WmiQueryableCore.DCom
                 queryObject,
                 null);
         }
-
 
         /// <summary>
         /// Executes query and returns WMI object instances
